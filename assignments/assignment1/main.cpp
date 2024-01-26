@@ -38,9 +38,15 @@ struct Material
 	float shininess = 128;
 }material;
 
+struct PostProcessEffect
+{
+	bool invertColor = false;
+	bool depthEdgeDetection = false;
+}PPE;
+
 int main() 
 {
-	GLFWwindow* window = initWindow("Assignment 0", screenWidth, screenHeight);
+	GLFWwindow* window = initWindow("Assignment 1", screenWidth, screenHeight);
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
 	ew::Shader postShader = ew::Shader("assets/post.vert", "assets/post.frag");
@@ -48,19 +54,19 @@ int main()
 	ew::Model model = ew::Model("assets/suzanne.obj");
 	ew::Transform modelTransform;
 
-	GLuint texture = ew::loadTexture("assets/brick_color.jpg");
+	GLuint texture = ew::loadTexture("assets/texture.jpg");
 
 	camera.position = glm::vec3(0, 0, 5);
 	camera.target = glm::vec3(0, 0, 0);
-	camera.aspectRatio = (float)screenWidth / screenHeight;
+	camera.aspectRatio = static_cast<float>(screenWidth) / screenHeight;
 	camera.fov = 60;
 
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-	// Create Frame Buffer
-	unsigned int frameBuffer;
-	glGenFramebuffers(1, &frameBuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+	// Create FBO
+	unsigned int FBO;
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	// Create Color Buffer
 	unsigned int colorBuffer;
@@ -72,14 +78,24 @@ int main()
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	// Bind Texture to Frame Buffer
+	// Bind Color Buffer to FBO
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
 
-	// Check Frame Buffer
+	// Create RBO
+	unsigned int RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenWidth, screenHeight);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	// Bind RBO to FBO
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+	// Check FBO
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		assert(0 && "Frame Buffer Not Complete");
 
-	// Unbind Frame Buffer
+	// Unbind FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	// Create Screen Quad
@@ -87,11 +103,11 @@ int main()
 
 		-1.f,  1.f, 0.f, 1.f,
 		-1.f, -1.f, 0.f, 0.f,
-		 1.f, -1.f, 1.f, 1.f,
-
-		-1.f,  1.f, 0.f, 1.f,
-		 1.f, -1.f, 1.f, 0.f,
 		 1.f,  1.f, 1.f, 1.f,
+
+		 1.f,  1.f, 1.f, 1.f,
+		-1.f, -1.f, 0.f, 0.f,
+		 1.f, -1.f, 1.f, 0.f,
 	};
 
 	// Create VAO
@@ -110,7 +126,7 @@ int main()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuad), &screenQuad, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), static_cast<void*>(0));
 
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
@@ -118,21 +134,26 @@ int main()
 	// Unbind VAO
 	glBindVertexArray(0);
 
+	// Render Settings
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
 	// Game Loop
 	while (!glfwWindowShouldClose(window)) 
 	{
 		glfwPollEvents();
 
-		float time = (float)glfwGetTime();
+		float time = static_cast<float>(glfwGetTime());
 		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
 		// Render Frame Buffer
 		{
+			glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 
 			cameraController.move(window, &camera, deltaTime);
 
@@ -160,12 +181,15 @@ int main()
 
 		// Render Post Process Shader
 		{
-			glDisable(GL_DEPTH_TEST);
-
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			postShader.use();
+			postShader.setFloat("screen_width", static_cast<float>(screenWidth));
+			postShader.setFloat("screen_height", static_cast<float>(screenHeight));
+
+			postShader.setFloat("invert_color", PPE.invertColor);
+			postShader.setFloat("depth_edge_detection", PPE.depthEdgeDetection);
 
 			glBindVertexArray(screenVAO);
 			glBindTexture(GL_TEXTURE_2D, colorBuffer);
@@ -173,11 +197,8 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 
-		// Render UI Buffer
+		// Render UI
 		{
-			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 			drawUI();
 		}
 
@@ -215,7 +236,12 @@ void drawUI()
 		ImGui::SliderFloat("Shininess", &material.shininess, 2.0f, 1024.0f);
 	}
 
-	ImGui::Text("Add Controls Here!");
+	if (ImGui::CollapsingHeader("Post Process"))
+	{
+		ImGui::Checkbox("Invert Colors", &PPE.invertColor);
+		ImGui::Checkbox("Sobel Depth Edge Detection", &PPE.depthEdgeDetection);
+	}
+
 	ImGui::End();
 
 	ImGui::Render();

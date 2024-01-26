@@ -39,7 +39,7 @@ void main()
 	vec3 diffuse_color = light_color * diffuse_factor;
 
 	vec3 new_light_color = (material.kd * diffuse_factor + material.ks * specular_factor) * light_color;
-	new_light_color += ambient_color * material.ka;
+	new_light_color += ambient_color + material.ka;
 
 	vec3 object_color = texture(main_texture, fs_in.texture_coord).rgb;
 
