@@ -32,7 +32,7 @@ glm::vec3 ambient_color;
 
 struct Material 
 {
-	float ka = 1.0;
+	float ka = 0.5;
 	float kd = 0.5;
 	float ks = 0.5;
 	float shininess = 128;
@@ -40,8 +40,10 @@ struct Material
 
 struct PostProcessEffect
 {
+	int renderScaler = 1;
 	bool invertColor = false;
 	bool depthEdgeDetection = false;
+	bool grayscaleEdge = false;
 }PPE;
 
 int main() 
@@ -187,9 +189,12 @@ int main()
 			postShader.use();
 			postShader.setFloat("screen_width", static_cast<float>(screenWidth));
 			postShader.setFloat("screen_height", static_cast<float>(screenHeight));
+			postShader.setFloat("time", deltaTime);
 
+			postShader.setInt("render_count", PPE.renderScaler);
 			postShader.setFloat("invert_color", PPE.invertColor);
 			postShader.setFloat("depth_edge_detection", PPE.depthEdgeDetection);
+			postShader.setFloat("grayscale_edge", PPE.grayscaleEdge);
 
 			glBindVertexArray(screenVAO);
 			glBindTexture(GL_TEXTURE_2D, colorBuffer);
@@ -236,10 +241,15 @@ void drawUI()
 		ImGui::SliderFloat("Shininess", &material.shininess, 2.0f, 1024.0f);
 	}
 
-	if (ImGui::CollapsingHeader("Post Process"))
-	{
+	if (ImGui::CollapsingHeader("Post Process")) {
+
+		ImGui::SliderInt("Render Scaler", &PPE.renderScaler, 1, 10);
 		ImGui::Checkbox("Invert Colors", &PPE.invertColor);
 		ImGui::Checkbox("Sobel Depth Edge Detection", &PPE.depthEdgeDetection);
+		if(PPE.depthEdgeDetection) {
+
+			ImGui::Checkbox("Edge Detection Grayscaled", &PPE.grayscaleEdge);
+		}
 	}
 
 	ImGui::End();
