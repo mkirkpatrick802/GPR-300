@@ -30,32 +30,29 @@ float prevFrameTime;
 float deltaTime;
 glm::vec3 ambient_color;
 
-struct Material 
-{
+struct Material {
 	float ka = 0.5;
 	float kd = 0.5;
 	float ks = 0.5;
 	float shininess = 128;
 }material;
 
-struct PostProcessEffect
-{
+struct PostProcessEffect {
 	int renderScaler = 1;
 	bool invertColor = false;
 	bool depthEdgeDetection = false;
 	bool grayscaleEdge = false;
 }PPE;
 
-int main() 
-{
+int main() {
 
-	// TODO: Create Init File
 	GLFWwindow* window = initWindow("Assignment 2", screenWidth, screenHeight);
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
-	ew::Shader postShader = ew::Shader("assets/post.vert", "assets/post.frag");
+	//ew::Shader postShader = ew::Shader("assets/post.vert", "assets/post.frag");
 	ew::Shader depthShader = ew::Shader("assets/depth.vert", "assets/depth.frag");
 	ew::Shader debugShader = ew::Shader("assets/debug.vert", "assets/debug.frag");
+	ew::Shader shadowShader = ew::Shader("assets/shadow.vert", "assets/shadow.frag");
 
 	ew::Model model = ew::Model("assets/suzanne.obj");
 	ew::Transform modelTransform;
@@ -69,79 +66,51 @@ int main()
 
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-	// TODO: Create New File For Creating FBO
-	// Create FBO
-	unsigned int FBO;
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	float planeVertices[]
+	{
+		+25.f, -1.5f, -25.f, 0.f, 1.f, 0.f, 0.f, 25.f,
+		-25.f, -1.5f, +25.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+		+25.f, -1.5f, +25.f, 0.f, 1.f, 0.f, 25.f, 0.f,
 
-	// Create Color Buffer
-	unsigned int colorBuffer;
-	glGenTextures(1, &colorBuffer);
-	glBindTexture(GL_TEXTURE_2D, colorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// Bind Color Buffer to FBO
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0);
-
-	// TODO: Create New File For Creating RBO
-	// Create RBO
-	unsigned int RBO;
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenWidth, screenHeight);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-	// Bind RBO to FBO
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-	// Check FBO
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		assert(0 && "Frame Buffer Not Complete");
-
-	// Unbind FBO
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	// TODO: Create New File For Creating VAO & VBO
-	// Create Screen Quad
-	float screenQuad[] = {
-
-		-1.f,  1.f, 0.f, 1.f,
-		-1.f, -1.f, 0.f, 0.f,
-		 1.f,  1.f, 1.f, 1.f,
-
-		 1.f,  1.f, 1.f, 1.f,
-		-1.f, -1.f, 0.f, 0.f,
-		 1.f, -1.f, 1.f, 0.f,
+		+25.f, -1.5f, -25.f, 0.f, 1.f, 0.f, 25.f, 25.f,
+		-25.f, -1.5f, -25.f, 0.f, 1.f, 0.f, 0.f, 25.f,
+		-25.f, -1.5f, +25.f, 0.f, 1.f, 0.f, 25.f, 0.f
 	};
 
+	/*
+	*	Create Plane
+	*/
+
 	// Create VAO
-	unsigned int screenVAO;
-	glGenVertexArrays(1, &screenVAO);
+	unsigned int planeVAO;
+	glGenVertexArrays(1, &planeVAO);
 
 	// Create VBO
-	unsigned int screenVBO;
-	glGenBuffers(1, &screenVBO);
+	unsigned int planeVBO;
+	glGenBuffers(1, &planeVBO);
 
 	// Bind VAO and VBO
-	glBindVertexArray(screenVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
 
 	// Read Quad Position's and UV's into the VBO
-	glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuad), &screenQuad, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), static_cast<void*>(0));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), static_cast<void*>(0));
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
 	// Unbind VAO
 	glBindVertexArray(0);
+
+	/*
+	*	Depth Map
+	*/
 
 	// Create Depth Map FBO
 	unsigned int depthMapFBO;
@@ -157,8 +126,11 @@ int main()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	float borderColor[] = { 1.f, 1.f, 1.f, 1.f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	// Bind Depth Map to FBO
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -170,7 +142,22 @@ int main()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	// Debug Screen Quad
+	/*
+	*	Debug Quad
+	*/
+
+	// Create Screen Quad
+	float screenQuad[] = {
+
+		-1.f,  1.f, 0.f, 1.f,
+		-1.f, -1.f, 0.f, 0.f,
+		 1.f,  1.f, 1.f, 1.f,
+
+		 1.f,  1.f, 1.f, 1.f,
+		-1.f, -1.f, 0.f, 0.f,
+		 1.f, -1.f, 1.f, 0.f,
+	};
+
 	// Create VAO
 	unsigned int debugVAO;
 	glGenVertexArrays(1, &debugVAO);
@@ -195,12 +182,15 @@ int main()
 	// Unbind VAO
 	glBindVertexArray(0);
 
+	/*
+	 *	Render Loop
+	*/
+
 	// Render Settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	// TODO: Split This Into Functions
 	// Game Loop
 	while (!glfwWindowShouldClose(window)) 
 	{
@@ -210,115 +200,122 @@ int main()
 		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
-		// Render to Shadow Frame Buffer
+		cameraController.move(window, &camera, deltaTime);
+
+		float near_plane = 1.0f, far_plane = 7.5f;
+		glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, near_plane, far_plane);
+		glm::mat4 lightView = lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),glm::vec3(0.0f, 0.0f, 0.0f),glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+		modelTransform.rotation = glm::rotate(modelTransform.rotation, deltaTime, glm::vec3(0, 1, 0));
+
+		// Render to Depth FBO
 		{
-			auto lightPos = glm::vec3(0, 10, 0);
-			auto lightDir = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0, 1, 0));
-			auto lightProjection = glm::ortho(-5.f, 5.f, -5.f, 5.f, 0.f, 100.f);
-
-			glViewport(0, 0, screenWidth, screenHeight);
-
 			glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 
+			// Pass
 			glClear(GL_DEPTH_BUFFER_BIT);
 
+			// Pipeline
+			glViewport(0, 0, 1024, 1024);
+
+			// Bind
 			depthShader.use();
 			depthShader.setMat4("model_matrix", modelTransform.modelMatrix());
-			depthShader.setMat4("projection_matrix", lightDir * lightProjection);
+			depthShader.setMat4("projection_matrix", lightSpaceMatrix);
+
+			// Draw
 			model.draw();
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
+		// Render Suzanna on main screen
 		{
-			glViewport(0, 0, screenWidth, screenHeight);
-
+			// Pass
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			// Pipeline
+			glViewport(0, 0, screenWidth, screenHeight);
  
-			// Bind textures
+			// Bind
+			shadowShader.use();
+			shadowShader.setMat4("projection", camera.projectionMatrix());
+			shadowShader.setMat4("view", camera.viewMatrix());
+			shadowShader.setVec3("view_position", camera.position);
+			shadowShader.setVec3("light_position", glm::vec3(-3.0f, 3.0f, -3.0f));
+			shadowShader.setMat4("light_matrix", lightSpaceMatrix);
+			shadowShader.setMat4("model", modelTransform.modelMatrix());
+
+			shadowShader.setVec3("ambient_color", ambient_color);
+			shadowShader.setFloat("material.ka", material.ka);
+			shadowShader.setFloat("material.kd", material.kd);
+			shadowShader.setFloat("material.ks", material.ks);
+			shadowShader.setFloat("material.shininess", material.shininess);
+
 			glBindTextureUnit(0, texture);
+			shadowShader.setInt("diffuse_texture", 0);
 
-			// Set uniforms
-			litShader.use();
-			litShader.setInt("main_texture", 0);
-			litShader.setVec3("eye_position", camera.position);
-			litShader.setVec3("ambient_color", ambient_color);
-			litShader.setFloat("material.ka", material.ka);
-			litShader.setFloat("material.kd", material.kd);
-			litShader.setFloat("material.ks", material.ks);
-			litShader.setFloat("material.shininess", material.shininess);
+			glBindTextureUnit(1, depthMap);
+			shadowShader.setInt("shadow_map", 1);
 
-			litShader.setMat4("model_matrix", modelTransform.modelMatrix());
-			litShader.setMat4("projection_matrix", camera.projectionMatrix() * camera.viewMatrix());
+			// Draw
 			model.draw();
+
 		}
 
+		// Render Plane on main screen
 		{
-			// Render Debug Square
-			glViewport(screenWidth - 150, 0, 150, 150);
+			// Pass
 
-			debugShader.use();
-			//debugShader.setInt("debug_img", depthMap);
+			// Pipeline
+			glViewport(0, 0, screenWidth, screenHeight);
 
-			glBindVertexArray(debugVAO);
-			glBindTexture(GL_TEXTURE_2D, depthMap);
+			// Bind
+			shadowShader.use();
+			shadowShader.setMat4("projection", camera.projectionMatrix());
+			shadowShader.setMat4("view", camera.viewMatrix());
+			shadowShader.setVec3("view_position", camera.position);
+			shadowShader.setVec3("light_position", glm::vec3(-3.0f, 3.0f, -3.0f));
+			shadowShader.setMat4("light_matrix", lightSpaceMatrix);
+			shadowShader.setMat4("model", glm::mat4(1));
 
+			shadowShader.setVec3("ambient_color", ambient_color);
+			shadowShader.setFloat("material.ka", material.ka);
+			shadowShader.setFloat("material.kd", material.kd);
+			shadowShader.setFloat("material.ks", material.ks);
+			shadowShader.setFloat("material.shininess", material.shininess);
+
+			glBindTextureUnit(0, texture);
+			shadowShader.setInt("diffuse_texture", 0);
+
+			glBindTextureUnit(1, depthMap);
+			shadowShader.setInt("shadow_map", 1);
+
+			glBindVertexArray(planeVAO);
+
+			// Draw
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 
-		// Render to Default Frame Buffer
+		// Render Debug Square w/ Depth FBO
 		{
-			//glViewport(0, 0, screenWidth, screenHeight);
+			// Pass
 
-			//glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+			// Pipeline
+			glViewport(screenWidth - 150, 0, 150, 150);
 
-			//glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			// Bind
+			glBindVertexArray(debugVAO);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, depthMap);
 
-			//cameraController.move(window, &camera, deltaTime);
+			debugShader.use();
+			debugShader.setInt("debug_img", 0);
 
-			//modelTransform.rotation = glm::rotate(modelTransform.rotation, deltaTime, glm::vec3(0, 1, 0));
-
-			//// Bind textures
-			//glBindTextureUnit(0, texture);
-
-			//// Set uniforms
-			//litShader.use();
-			//litShader.setInt("main_texture", 0);
-			//litShader.setVec3("eye_position", camera.position);
-			//litShader.setVec3("ambient_color", ambient_color);
-			//litShader.setFloat("material.ka", material.ka);
-			//litShader.setFloat("material.kd", material.kd);
-			//litShader.setFloat("material.ks", material.ks);
-			//litShader.setFloat("material.shininess", material.shininess);
-
-			//litShader.setMat4("model_matrix", modelTransform.modelMatrix());
-			//litShader.setMat4("projection_matrix", camera.projectionMatrix() * camera.viewMatrix());
-			//model.draw();
-
-			//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		}
-
-		// Render Post Process Shader
-		{
-			//glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			//postShader.use();
-			//postShader.setFloat("screen_width", static_cast<float>(screenWidth));
-			//postShader.setFloat("screen_height", static_cast<float>(screenHeight));
-			//postShader.setFloat("time", deltaTime);
-
-			//postShader.setInt("render_count", PPE.renderScaler);
-			//postShader.setFloat("invert_color", PPE.invertColor);
-			//postShader.setFloat("depth_edge_detection", PPE.depthEdgeDetection);
-			//postShader.setFloat("grayscale_edge", PPE.grayscaleEdge);
-
-			//glBindVertexArray(screenVAO);
-			//glBindTexture(GL_TEXTURE_2D, colorBuffer);
-
-			//glDrawArrays(GL_TRIANGLES, 0, 6);
+			// Draw
+			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 
 		// Render UI
