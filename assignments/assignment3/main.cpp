@@ -15,6 +15,8 @@
 #include <imgui_impl_opengl3.h>
 #include <GL/gl.h>
 
+#include "ew/procGen.h"
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
@@ -48,6 +50,12 @@ struct GBuffer
 	unsigned int albedo;
 	unsigned int depth;
 }deffered;
+
+struct ScreenQuad
+{
+	unsigned int vao;
+	unsigned int vbo;
+}quad;
 
 void CreateDeferredPass()
 {
@@ -115,30 +123,92 @@ void CreateDeferredPass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+float screenQuad[] = {
+
+	-1.f,  1.f, 0.f, 1.f,
+	-1.f, -1.f, 0.f, 0.f,
+	 1.f,  1.f, 1.f, 1.f,
+
+	 1.f,  1.f, 1.f, 1.f,
+	-1.f, -1.f, 0.f, 0.f,
+	 1.f, -1.f, 1.f, 0.f,
+};
+
+void CreateScreenQuad()
+{
+	// Create VAO
+	glGenVertexArrays(1, &quad.vao);
+
+	// Create VBO
+	glGenBuffers(1, &quad.vbo);
+
+	// Bind VAO and VBO
+	glBindVertexArray(quad.vao);
+	glBindBuffer(GL_ARRAY_BUFFER, quad.vbo);
+
+	// Read Quad Position's and UV's into the VBO
+	glBufferData(GL_ARRAY_BUFFER, sizeof(screenQuad), &screenQuad, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), static_cast<void*>(0));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	// Unbind VAO
+	glBindVertexArray(0);
+}
+
+struct PointLight {
+
+	PointLight()
+	{
+		position = glm::vec3(0);
+		color = glm::vec3(1, 0, 1);
+	}
+
+	PointLight(glm::vec3 pos, glm::vec3 col)
+	{
+		position = pos;
+		color = col;
+	}
+
+	glm::vec3 position;
+	float radius = 5;
+	glm::vec3 color = glm::vec3(1, 0, 1);
+};
+
+const int MAX_POINT_LIGHTS = 100;
+PointLight pointLights[MAX_POINT_LIGHTS];
+
 int main()
 {
 	GLFWwindow* window = initWindow("Assignment 3", screenWidth, screenHeight);
 
-	//ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
-	//ew::Shader defferedShader = ew::Shader("assets/deffered.vert", "assets/deffered.frag");
 	ew::Shader gPass = ew::Shader("assets/gPass.vert", "assets/gPass.frag");
+	ew::Shader litPass = ew::Shader("assets/litPass.vert", "assets/litPass.frag");
 
 	ew::Model model = ew::Model("assets/suzanne.obj");
 	ew::Transform modelTransform;
 
-	GLuint texture = ew::loadTexture("assets/texture.jpg");
+	ew::Mesh plane = ew::createPlane(305, 305, 128);
+	ew::Transform planeTransform;
+	planeTransform.position = glm::vec3(-150, -1, -150);
 
-	camera.position = glm::vec3(0, 0, 5);
+	GLuint paperTexture = ew::loadTexture("assets/texture.jpg");
+	GLuint brickTexture = ew::loadTexture("assets/brick_color.jpg");
+
+	camera.position = glm::vec3(3, 0, 3);
 	camera.target = glm::vec3(0, 0, 0);
-	camera.aspectRatio = static_cast<float>(screenWidth) / screenHeight;
+	camera.aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 	camera.fov = 60;
 
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
 	CreateDeferredPass();
+	CreateScreenQuad();
 
 	// Render Settings
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
@@ -158,27 +228,75 @@ int main()
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, deffered.fbo);
 
+			glEnable(GL_DEPTH_TEST);
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			// Bind textures
-			glBindTextureUnit(0, texture);
+			glBindTextureUnit(0, paperTexture);
+			glBindTextureUnit(1, brickTexture);
 
 			// Set uniforms
 			gPass.use();
 			gPass.setInt("main_texture", 0);
+			gPass.setInt("uv_scale", 1);
 
-			gPass.setMat4("model_matrix", modelTransform.modelMatrix());
+			for (int x = 0; x <= 100; x++)
+			{
+				for (int z = 0; z <= 100; z++)
+				{
+					//pointLights[z].position.x = (float)(x * 4) * -1;
+					//pointLights[z].position.z = (float)(z * 4) * -1;
+
+					modelTransform.position.x = (float)(x * 4) * -1;
+					modelTransform.position.z = (float)(z * 4) * -1;
+					gPass.setMat4("model_matrix", modelTransform.modelMatrix());
+					model.draw();
+				}
+			}
+
+			gPass.setInt("main_texture", 1);
+			gPass.setInt("uv_scale", 20);
+			gPass.setMat4("model_matrix", planeTransform.modelMatrix());
+			plane.draw();
+
 			gPass.setMat4("projection_matrix", camera.projectionMatrix() * camera.viewMatrix());
-			model.draw();
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 
 		// Lighting Pass
 		{
+			glDisable(GL_DEPTH_TEST);
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindTextureUnit(0, deffered.position);
+			glBindTextureUnit(1, deffered.normal);
+			glBindTextureUnit(2, deffered.albedo);
+
+			litPass.use();
+			litPass.setInt("positionTex", 0);
+			litPass.setInt("normalTex", 1);
+			litPass.setInt("albedoTex", 2);
+
+			litPass.setVec3("eye_position", camera.position);
+			litPass.setVec3("ambient_color", ambient_color);
+			litPass.setFloat("material.ka", material.ka);
+			litPass.setFloat("material.kd", material.kd);
+			litPass.setFloat("material.ks", material.ks);
+			litPass.setFloat("material.shininess", material.shininess);
+
+			for (int i = 0; i < MAX_POINT_LIGHTS; i++)
+			{
+				std::string prefix = "point_lights[" + std::to_string(i) + "].";
+				litPass.setVec3(prefix + "position", pointLights[i].position);
+				litPass.setVec3(prefix + "color", pointLights[i].color);
+				litPass.setFloat(prefix + "radius", pointLights[i].radius);
+			}
+
+			glBindVertexArray(quad.vao);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
 
 		// Render UI

@@ -49,7 +49,6 @@ int main() {
 	GLFWwindow* window = initWindow("Assignment 2", screenWidth, screenHeight);
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
-	//ew::Shader postShader = ew::Shader("assets/post.vert", "assets/post.frag");
 	ew::Shader depthShader = ew::Shader("assets/depth.vert", "assets/depth.frag");
 	ew::Shader debugShader = ew::Shader("assets/debug.vert", "assets/debug.frag");
 	ew::Shader shadowShader = ew::Shader("assets/shadow.vert", "assets/shadow.frag");

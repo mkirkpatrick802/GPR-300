@@ -12,10 +12,11 @@ in Surface
 }fs_in;
 
 uniform sampler2D main_texture;
+uniform int uv_scale = 1;
 
 void main()
 {
 	position = fs_in.world_position;
 	normal = normalize(fs_in.world_normal);
-	albedo = texture(main_texture,fs_in.texture_coord).rgb;
+	albedo = texture(main_texture,fs_in.texture_coord * uv_scale).rgb;
 }
