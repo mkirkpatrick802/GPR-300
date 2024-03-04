@@ -13,6 +13,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include <random>
 #include <GL/gl.h>
 
 #include "ew/procGen.h"
@@ -161,25 +162,20 @@ void CreateScreenQuad()
 
 struct PointLight {
 
-	PointLight()
-	{
-		position = glm::vec3(0);
-		color = glm::vec3(1, 0, 1);
-	}
-
-	PointLight(glm::vec3 pos, glm::vec3 col)
-	{
-		position = pos;
-		color = col;
-	}
-
 	glm::vec3 position;
-	float radius = 5;
+	float radius = 8;
 	glm::vec3 color = glm::vec3(1, 0, 1);
 };
 
 const int MAX_POINT_LIGHTS = 100;
 PointLight pointLights[MAX_POINT_LIGHTS];
+
+float generateRandomFloat(float min, float max) {
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> dis(min, max);
+	return dis(gen);
+}
 
 int main()
 {
@@ -187,6 +183,9 @@ int main()
 
 	ew::Shader gPass = ew::Shader("assets/gPass.vert", "assets/gPass.frag");
 	ew::Shader litPass = ew::Shader("assets/litPass.vert", "assets/litPass.frag");
+	ew::Shader lightOrb = ew::Shader("assets/lightOrb.vert", "assets/lightOrb.frag");
+
+	ew::Mesh sphereMesh = ew::Mesh(ew::createSphere(1.0f, 8));
 
 	ew::Model model = ew::Model("assets/suzanne.obj");
 	ew::Transform modelTransform;
@@ -207,6 +206,14 @@ int main()
 
 	CreateDeferredPass();
 	CreateScreenQuad();
+
+	for (int i = 0; i < MAX_POINT_LIGHTS; i++)
+	{
+		pointLights[i].position.x = generateRandomFloat(-100, 0);
+		pointLights[i].position.y = generateRandomFloat(1, 3);
+		pointLights[i].position.z = generateRandomFloat(-100, 0);
+		pointLights[i].color = glm::vec4(generateRandomFloat(0, 1), generateRandomFloat(0, 1), generateRandomFloat(0, 1), 1);
+	}
 
 	// Render Settings
 	glEnable(GL_CULL_FACE);
@@ -245,9 +252,6 @@ int main()
 			{
 				for (int z = 0; z <= 100; z++)
 				{
-					//pointLights[z].position.x = (float)(x * 4) * -1;
-					//pointLights[z].position.z = (float)(z * 4) * -1;
-
 					modelTransform.position.x = (float)(x * 4) * -1;
 					modelTransform.position.z = (float)(z * 4) * -1;
 					gPass.setMat4("model_matrix", modelTransform.modelMatrix());
@@ -274,11 +278,13 @@ int main()
 			glBindTextureUnit(0, deffered.position);
 			glBindTextureUnit(1, deffered.normal);
 			glBindTextureUnit(2, deffered.albedo);
+			glBindTextureUnit(3, deffered.depth);
 
 			litPass.use();
 			litPass.setInt("positionTex", 0);
 			litPass.setInt("normalTex", 1);
 			litPass.setInt("albedoTex", 2);
+			litPass.setInt("depthTex", 3);
 
 			litPass.setVec3("eye_position", camera.position);
 			litPass.setVec3("ambient_color", ambient_color);
@@ -297,6 +303,29 @@ int main()
 
 			glBindVertexArray(quad.vao);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
+
+		// Sphere Pass
+		{
+			glEnable(GL_DEPTH_TEST);
+
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, deffered.fbo);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+			glBlitFramebuffer(0, 0, screenWidth, screenHeight, 0, 0, screenWidth, screenHeight, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+			//Draw all light orbs
+			lightOrb.use();
+			lightOrb.setMat4("_ViewProjection", camera.projectionMatrix() * camera.viewMatrix());
+			for (int i = 0; i < MAX_POINT_LIGHTS; i++)
+			{
+				glm::mat4 m = glm::mat4(1.0f);
+				m = glm::translate(m, pointLights[i].position);
+				m = glm::scale(m, glm::vec3(0.2f)); //Whatever radius you want
+
+				lightOrb.setMat4("_Model", m);
+				lightOrb.setVec3("_Color", pointLights[i].color);
+				sphereMesh.draw();
+			}
 		}
 
 		// Render UI
