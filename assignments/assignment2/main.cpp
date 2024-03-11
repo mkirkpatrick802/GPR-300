@@ -14,6 +14,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "shadow.h"
+
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
@@ -111,41 +113,16 @@ int main() {
 	*	Depth Map
 	*/
 
-	// Create Depth Map FBO
-	unsigned int depthMapFBO;
-	glGenFramebuffers(1, &depthMapFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-
-	// Create Depth Map
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	// Create Depth Map FBO & Depth Map
 	unsigned int depthMap;
-	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-	float borderColor[] = { 1.f, 1.f, 1.f, 1.f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-	// Bind Depth Map to FBO
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		assert(0 && "Frame Buffer Not Complete");
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	unsigned int depthMapFBO;
+	CreateShadowFBO(depthMapFBO, depthMap);
 
 	/*
 	*	Debug Quad
 	*/
 
-	// Create Screen Quad
+	/*// Create Screen Quad
 	float screenQuad[] = {
 
 		-1.f,  1.f, 0.f, 1.f,
@@ -179,7 +156,7 @@ int main() {
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	// Unbind VAO
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 
 	/*
 	 *	Render Loop
@@ -195,15 +172,20 @@ int main() {
 	{
 		glfwPollEvents();
 
-		float time = static_cast<float>(glfwGetTime());
+		auto time = static_cast<float>(glfwGetTime());
 		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
 		cameraController.move(window, &camera, deltaTime);
 
-		float near_plane = 1.0f, far_plane = 7.5f;
+		/*float near_plane = 1.0f, far_plane = 7.5f;
 		glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, near_plane, far_plane);
 		glm::mat4 lightView = lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),glm::vec3(0.0f, 0.0f, 0.0f),glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightSpaceMatrix = lightProjection * lightView;*/
+
+		float near_plane = 1.0f, far_plane = 7.5f;
+		glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, near_plane, far_plane);
+		glm::mat4 lightView = lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
 		modelTransform.rotation = glm::rotate(modelTransform.rotation, deltaTime, glm::vec3(0, 1, 0));
@@ -216,15 +198,21 @@ int main() {
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			// Pipeline
-			glViewport(0, 0, 1024, 1024);
+			glViewport(0, 0, screenWidth, screenHeight);
 
 			// Bind
 			depthShader.use();
-			depthShader.setMat4("model_matrix", modelTransform.modelMatrix());
-			depthShader.setMat4("projection_matrix", lightSpaceMatrix);
 
-			// Draw
-			model.draw();
+			for (int i = 0; i < 3; i++)
+			{
+				depthShader.setMat4("projection_matrix", lightSpaceMatrix);
+
+				modelTransform.position.x = i * 20;
+				depthShader.setMat4("model_matrix", modelTransform.modelMatrix());
+
+				// Draw
+				model.draw();
+			}
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
@@ -245,7 +233,6 @@ int main() {
 			shadowShader.setVec3("view_position", camera.position);
 			shadowShader.setVec3("light_position", glm::vec3(-3.0f, 3.0f, -3.0f));
 			shadowShader.setMat4("light_matrix", lightSpaceMatrix);
-			shadowShader.setMat4("model", modelTransform.modelMatrix());
 
 			shadowShader.setVec3("ambient_color", ambient_color);
 			shadowShader.setFloat("material.ka", material.ka);
@@ -259,9 +246,14 @@ int main() {
 			glBindTextureUnit(1, depthMap);
 			shadowShader.setInt("shadow_map", 1);
 
-			// Draw
-			model.draw();
+			for (int i = 0; i < 3; i++)
+			{
+				modelTransform.position.x = i * 20;
+				shadowShader.setMat4("model", modelTransform.modelMatrix());
 
+				// Draw
+				model.draw();
+			}
 		}
 
 		// Render Plane on main screen
@@ -300,7 +292,7 @@ int main() {
 
 		// Render Debug Square w/ Depth FBO
 		{
-			// Pass
+			/*// Pass
 
 			// Pipeline
 			glViewport(screenWidth - 150, 0, 150, 150);
@@ -314,7 +306,7 @@ int main() {
 			debugShader.setInt("debug_img", 0);
 
 			// Draw
-			glDrawArrays(GL_TRIANGLES, 0, 6);
+			glDrawArrays(GL_TRIANGLES, 0, 6);*/
 		}
 
 		// Render UI

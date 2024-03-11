@@ -15,7 +15,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/assets/
 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets/)
 
 install(FILES ${assignment2_INC} DESTINATION include/assignment2)
-add_executable(assignment2 ${assignment2_SRC} ${assignment2_INC})
+add_executable(assignment2 ${assignment2_SRC} ${assignment2_INC} "shadow.cpp" "shadow.h")
 target_link_libraries(assignment2 PUBLIC core IMGUI assimp)
 target_include_directories(assignment2 PUBLIC ${CORE_INC_DIR} ${stb_INCLUDE_DIR})
 

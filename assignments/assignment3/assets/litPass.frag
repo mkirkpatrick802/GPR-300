@@ -71,7 +71,7 @@ vec3 calcPointLight(PointLight light,vec3 normal, vec3 pos)
 	float shadow = ShadowCalculation(vec4(light.position, 1), normal, to_light);
 
 	vec3 new_light_color = (material.kd * diffuse_factor + material.ks * specular_factor) * light.color;
-	new_light_color += ambient_color + (material.ka - (shadow * 100f));
+	new_light_color += ambient_color + (material.ka - (shadow * 100.f));
 	//new_light_color += ambient_color + material.ka;
 	new_light_color *= attenuateLinear(d,light.radius);
 
