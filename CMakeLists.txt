@@ -33,3 +33,5 @@ add_subdirectory(assignments/work_session0)
 add_subdirectory(assignments/work_session1)
 add_subdirectory(assignments/work_session2)
 add_subdirectory(assignments/work_session3)
+
+add_subdirectory(assignments/final)
