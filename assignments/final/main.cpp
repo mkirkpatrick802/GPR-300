@@ -16,6 +16,10 @@
 #include <imgui_impl_opengl3.h>
 
 // OUR FILES
+#include "Framebuffer.h"
+#include "CrosshatchingShader.h"
+#include "OutlineShader.h"
+#include "NoiseShader.h"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
@@ -45,18 +49,20 @@ int main()
 {
 	GLFWwindow* window = initWindow("Moebius Shader", screenWidth, screenHeight);
 
-	ew::Shader shader = ew::Shader("assets/lit.vert", "assets/lit.frag");
-	ew::Model model = ew::Model("assets/suzanne.obj");
-	ew::Transform modelTransform;
-
-	GLuint texture = ew::loadTexture("assets/brick_color.jpg");
-
 	camera.position = glm::vec3(0, 0, 5);
 	camera.target = glm::vec3(0, 0, 0);
 	camera.aspectRatio = (float)screenWidth / screenHeight;
 	camera.fov = 60;
 
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
+	Framebuffer FrameBufferObject;
+	FrameBufferObject.InitFBO(screenWidth, screenHeight);
+
+	// Shaders
+	CrosshatchingShader Crosshatching;
+	OutlineShader Outline;
+	NoiseShader Noise;
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -71,32 +77,12 @@ int main()
 		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
-		// Render
-		{
-			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		cameraController.move(window, &camera, deltaTime);
 
-			cameraController.move(window, &camera, deltaTime);
-
-			modelTransform.rotation = glm::rotate(modelTransform.rotation, deltaTime, glm::vec3(0, 1, 0));
-
-			// Bind textures
-			glBindTextureUnit(0, texture);
-
-			// Set uniforms
-			shader.use();
-			shader.setInt("main_texture", 0);
-			shader.setVec3("eye_position", camera.position);
-			shader.setVec3("ambient_color", ambient_color);
-			shader.setFloat("material.ka", material.ka);
-			shader.setFloat("material.kd", material.kd);
-			shader.setFloat("material.ks", material.ks);
-			shader.setFloat("material.shininess", material.shininess);
-
-			shader.setMat4("model_matrix", modelTransform.modelMatrix());
-			shader.setMat4("projection_matrix", camera.projectionMatrix() * camera.viewMatrix());
-			model.draw();
-		}
+		FrameBufferObject.Render(camera, deltaTime);
+		Crosshatching.Render(deltaTime);
+		Outline.Render(deltaTime);
+		Noise.Render(deltaTime);
 
 		drawUI();
 
@@ -126,15 +112,6 @@ void drawUI()
 		resetCamera();
 	}
 
-	if (ImGui::CollapsingHeader("Material")) 
-	{
-		ImGui::SliderFloat("AmbientK", &material.ka, 0.0f, 1.0f);
-		ImGui::SliderFloat("DiffuseK", &material.kd, 0.0f, 1.0f);
-		ImGui::SliderFloat("SpecularK", &material.ks, 0.0f, 1.0f);
-		ImGui::SliderFloat("Shininess", &material.shininess, 2.0f, 1024.0f);
-	}
-
-	ImGui::Text("Add Controls Here!");
 	ImGui::End();
 
 	ImGui::Render();
