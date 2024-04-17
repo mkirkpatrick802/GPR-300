@@ -2,12 +2,14 @@
 #include <ew/external/glad.h>
 #include "ew/shader.h"
 
+struct FramebufferPackage;
+
 class CrosshatchingShader
 {
 public:
 
 	CrosshatchingShader();
-	void Render(float deltaTime);
+	void Render(FramebufferPackage package, float deltaTime);
 
 private:
 

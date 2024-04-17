@@ -6,12 +6,15 @@ layout(location = 2) in vec2 texture_coord;
 
 uniform mat4 model_matrix;
 uniform mat4 projection_matrix;
+uniform mat4 view_matrix;
+uniform mat4 lightspace_matrix;
 
 out Surface
 {
 	vec3 world_position;
 	vec3 world_normal;
 	vec2 texture_coord;
+	vec4 lightspace_position;
 }vs_out;
 
 void main()
@@ -19,6 +22,7 @@ void main()
 	vs_out.world_position = vec3(model_matrix * vec4(position, 1));
 	vs_out.world_normal = transpose(inverse(mat3(model_matrix))) * normal;
 	vs_out.texture_coord = texture_coord;
+	vs_out.lightspace_position = lightspace_matrix * vec4(vs_out.world_position, 1);
 
-	gl_Position = projection_matrix * model_matrix * vec4(position, 1);
+	gl_Position = projection_matrix * view_matrix * vec4(vs_out.world_position, 1);
 }

@@ -25,36 +25,24 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
 void drawUI();
 
-// Camera
-ew::CameraController cameraController;
-ew::Camera camera;
-void resetCamera();
-
 //Global state
 int screenWidth = 1080;
 int screenHeight = 720;
 float prevFrameTime;
 float deltaTime;
-glm::vec3 ambient_color;
 
-struct Material 
-{
-	float ka = 1.0;
-	float kd = 0.5;
-	float ks = 0.5;
-	float shininess = 128;
-} material;
+// Camera
+ew::CameraController cameraController;
+ew::Camera camera;
+
+void setupCamera();
+void resetCamera();
 
 int main() 
 {
 	GLFWwindow* window = initWindow("Moebius Shader", screenWidth, screenHeight);
-
-	camera.position = glm::vec3(0, 0, 5);
-	camera.target = glm::vec3(0, 0, 0);
-	camera.aspectRatio = (float)screenWidth / screenHeight;
-	camera.fov = 60;
-
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	setupCamera();
 
 	Framebuffer FrameBufferObject;
 	FrameBufferObject.InitFBO(screenWidth, screenHeight);
@@ -73,23 +61,36 @@ int main()
 	{
 		glfwPollEvents();
 
-		float time = (float)glfwGetTime();
+		// Time Keeper
+		const float time = (float)glfwGetTime();
 		deltaTime = time - prevFrameTime;
 		prevFrameTime = time;
 
+		// Camera Movement
 		cameraController.move(window, &camera, deltaTime);
 
+		// Render Scene
 		FrameBufferObject.Render(camera, deltaTime);
-		Crosshatching.Render(deltaTime);
+		Crosshatching.Render(FrameBufferObject.FBOPackage, deltaTime);
 		Outline.Render(deltaTime);
 		Noise.Render(deltaTime);
 
+		// Render UI
 		drawUI();
 
+		// Buffer Swap
 		glfwSwapBuffers(window);
 	}
 
 	printf("Shutting down...");
+}
+
+void setupCamera()
+{
+	camera.position = glm::vec3(0, 0, 5);
+	camera.target = glm::vec3(0, 0, 0);
+	camera.aspectRatio = (float)screenWidth / (float)screenHeight;
+	camera.fov = 60;
 }
 
 void resetCamera()
