@@ -12,6 +12,11 @@
 namespace ew {
 	ew::Mesh processAiMesh(aiMesh* aiMesh);
 
+	Model::Model()
+	{
+		isValid = false;
+	}
+
 	Model::Model(const std::string& filePath)
 	{
 		Assimp::Importer importer;
@@ -21,6 +26,8 @@ namespace ew {
 			aiMesh* aiMesh = aiScene->mMeshes[i];
 			m_meshes.push_back(processAiMesh(aiMesh));
 		}
+
+		isValid = true;
 	}
 
 	void Model::draw()

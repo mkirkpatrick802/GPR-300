@@ -9,6 +9,19 @@ struct FramebufferPackage
 {
 	unsigned int screenVAO;
 	unsigned int colorBuffer;
+	unsigned int shadowMap;
+};
+
+struct Model
+{
+	Model(const ew::Model& m, const ew::Transform& t, const GLuint tx): model(m), modelTransform(t), modelTexture(tx) {}
+	Model(const ew::Mesh& m, const ew::Transform& t, const GLuint tx): mesh(m), modelTransform(t), modelTexture(tx) {}
+
+	ew::Model model;
+	ew::Mesh mesh;
+
+	ew::Transform modelTransform;
+	GLuint modelTexture;
 };
 
 class Framebuffer
@@ -24,20 +37,20 @@ public:
 
 private:
 
+	void RenderModel(ew::Shader shader, Model* model);
+	void RenderScene(ew::Shader shader);
+
+private:
+
 	int screenWidth = 1080;
 	int screenHeight = 720;
 
 	unsigned int FBO;
 	unsigned int ColorBuffer;
 
-	ew::Shader shader;
+	ew::Shader litShader;
 
-	ew::Model model;
-	GLuint modelTexture;
-	ew::Transform modelTransform;
-
-	ew::Mesh plane;
-	ew::Transform planeTransform;
+	std::vector<Model*> sceneModels;
 
 	float screenQuad[24] = {
 
@@ -57,10 +70,14 @@ private:
  */
 
 	ew::Shader depthShader;
+	ew::Shader shadowShader;
 
 	const unsigned int SHADOW_WIDTH = 1024;
 	const unsigned int SHADOW_HEIGHT = 1024;
 
 	unsigned int depthMapFBO;
 	unsigned int depthMap;
+
+	unsigned int shadowMapFBO;
+	unsigned int shadowMap;
 };

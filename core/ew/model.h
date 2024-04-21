@@ -10,8 +10,12 @@
 namespace ew {
 	class Model {
 	public:
+		Model();
 		Model(const std::string& filePath);
 		void draw();
+
+		bool isValid;
+
 	private:
 		std::vector<ew::Mesh> m_meshes;
 	};
