@@ -1,6 +1,8 @@
 #version 450
 
-out vec4 fragment_color;
+layout(location = 0) out vec3 position_buffer;
+layout(location = 1) out vec3 normal_buffer;
+layout(location = 2) out vec3 color_buffer;
 
 in Surface
 {
@@ -35,7 +37,8 @@ void main()
 	spec = pow(max(dot(normal, halfway_direction), 0), 64);
 	vec3 specular = spec * light_color;
 	
-	// final color
-	vec3 lighting = (ambient * 1 + (diffuse + specular)) * color;
-	fragment_color = vec4(lighting, 1.0);
+	// render to textures
+	color_buffer = (ambient * 1 + (diffuse + specular)) * color;
+	position_buffer = fs_in.world_position;
+	normal_buffer = fs_in.world_normal;
 }

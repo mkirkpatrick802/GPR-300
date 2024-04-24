@@ -69,7 +69,6 @@ void main()
 
 	// final shadow
 	float shadow = ShadowCalculation(lightspace_position);
-	//shadow = (ambient * (1 - shadow) + (diff + (spec * .5)));
 
 	fragment_color = vec4(vec3(shadow), 1);
 }

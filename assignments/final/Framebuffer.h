@@ -9,7 +9,9 @@ struct FramebufferPackage
 {
 	unsigned int screenVAO;
 	unsigned int colorBuffer;
-	unsigned int shadowMap;
+	unsigned int shadowBuffer;
+	unsigned int positionBuffer;
+	unsigned int normalBuffer;
 };
 
 struct Model
@@ -42,15 +44,26 @@ private:
 
 private:
 
+
 	int screenWidth = 1080;
 	int screenHeight = 720;
 
+/*
+ *		Scene
+ */
+
 	unsigned int FBO;
+	unsigned int PositionBuffer;
+	unsigned int NormalBuffer;
 	unsigned int ColorBuffer;
 
 	ew::Shader litShader;
 
 	std::vector<Model*> sceneModels;
+
+/*
+ *		PPE
+ */
 
 	float screenQuad[24] = {
 
@@ -78,6 +91,6 @@ private:
 	unsigned int depthMapFBO;
 	unsigned int depthMap;
 
-	unsigned int shadowMapFBO;
-	unsigned int shadowMap;
+	unsigned int shadowBufferFBO;
+	unsigned int shadowBuffer;
 };

@@ -33,16 +33,38 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		glGenFramebuffers(1, &FBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
+		// Create Position Buffer
+		glGenTextures(1, &PositionBuffer);
+		glBindTexture(GL_TEXTURE_2D, PositionBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Bind Position to FBO
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, PositionBuffer, 0);
+
+		// Create Position Buffer
+		glGenTextures(1, &NormalBuffer);
+		glBindTexture(GL_TEXTURE_2D, NormalBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Bind Position to FBO
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, NormalBuffer, 0);
+
 		// Create Color Buffer
 		glGenTextures(1, &ColorBuffer);
 		glBindTexture(GL_TEXTURE_2D, ColorBuffer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Bind Color Buffer to FBO
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorBuffer, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, ColorBuffer, 0);
 
 		// Create RBO
 		unsigned int RBO;
@@ -54,6 +76,9 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind RBO to FBO
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
+		const unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+		glDrawBuffers(3, attachments);
+
 		// Check FBO
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 			assert(0 && "Frame Buffer Not Complete");
@@ -62,6 +87,8 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		FBOPackage.colorBuffer = ColorBuffer;
+		FBOPackage.positionBuffer = PositionBuffer;
+		FBOPackage.normalBuffer = NormalBuffer;
 	}
 
 /*
@@ -129,18 +156,18 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
  */
 
 	{
-		glGenFramebuffers(1, &shadowMapFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+		glGenFramebuffers(1, &shadowBufferFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowBufferFBO);
 
 		// Create Shadow Map
-		glGenTextures(1, &shadowMap);
-		glBindTexture(GL_TEXTURE_2D, shadowMap);
+		glGenTextures(1, &shadowBuffer);
+		glBindTexture(GL_TEXTURE_2D, shadowBuffer);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, shadowMap, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, shadowBuffer, 0);
 
 		// Create RBO
 		unsigned int RBO;
@@ -157,7 +184,7 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		FBOPackage.shadowMap = shadowMap;
+		FBOPackage.shadowBuffer = shadowBuffer;
 	}
 }
 
@@ -190,11 +217,11 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 
 	// 2. Render to Shadow Map
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowBufferFBO);
 
 		glCullFace(GL_BACK);
 		glViewport(0, 0, screenWidth, screenHeight);
-		glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
+		glClearColor(0, 0, 0, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Bind textures

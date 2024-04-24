@@ -6,6 +6,7 @@ layout(location = 1) in vec3 normal;
 out vec3 world_position;
 out vec3 world_normal;
 out vec4 lightspace_position;
+out mat4 camera_projection;
 
 uniform mat4 projection_matrix;
 uniform mat4 view_matrix;
