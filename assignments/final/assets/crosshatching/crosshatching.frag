@@ -19,8 +19,13 @@ void main()
 
     float shadowIntensity = texture(shadow_buffer, uv).r;
 
-    // TODO: Sample texture with vec3
-    vec2 crosshatching_uv = position.xy + normal.xy;
+    vec2 crosshatching_uv = position.xz * 2;
+
+    float angle = acos(dot(normalize(normal), vec3(0.0, 1.0, 0.0))); // Angle in radians
+
+    mat2 rotationMatrix = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    crosshatching_uv = rotationMatrix * crosshatching_uv;
+
     float crosshatching_color = 1 - texture(crosshatching_texture, crosshatching_uv).r;
     float crosshatching_alpha = texture(crosshatching_texture, crosshatching_uv).a;
 
@@ -30,4 +35,5 @@ void main()
         final = mix(color, vec4(crosshatching_color), crosshatching_alpha);
 
     fragment_color = final;
+    //fragment_color = vec4(vec3(shadowIntensity), 1);
 }
