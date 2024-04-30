@@ -12,15 +12,15 @@ Framebuffer::Framebuffer(): FBOPackage(), FBO(0), ColorBuffer(0),
                             depthShader(ew::Shader("assets/depth.vert", "assets/depth.frag")),
 							shadowShader(ew::Shader("assets/shadow.vert", "assets/shadow.frag"))
 {
-	auto suzanne = new Model(ew::Model("assets/suzanne.obj"), ew::Transform(), ew::loadTexture("assets/brick_color.jpg"));
+	auto suzanne = new Model(ew::Model("assets/suzanne.obj"), ew::Transform(), ew::loadTexture("assets/brick.jpg"));
 
 	ew::Transform sphereTransform;
 	sphereTransform.position = glm::vec3(-3, 0, 0);
-	auto sphere = new Model(ew::Model("assets/sphere.obj"), sphereTransform, ew::loadTexture("assets/brick_color.jpg"));
+	auto sphere = new Model(ew::Model("assets/sphere.obj"), sphereTransform, ew::loadTexture("assets/paper.jpg"));
 
 	ew::Transform planeT;
 	planeT.position = glm::vec3(0, -2, 0);
-	auto plane = new Model(ew::createPlane(305, 305, 128), planeT, ew::loadTexture("assets/brick_color.jpg"));
+	auto plane = new Model(ew::createPlane(305, 305, 128), planeT, ew::loadTexture("assets/brick.jpg"));
 
 	sceneModels.push_back(suzanne);
 	sceneModels.push_back(sphere);
@@ -197,9 +197,9 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 {
 	const float near_plane = 1.0f;
 	const float far_plane = 7.5f;
-	const glm::vec3 lightPosition = glm::vec3(-3, 3, -3);
+	const glm::vec3 lightPosition = glm::vec3(-20, 20, -20);
 	const glm::mat4 lightProjection = glm::ortho(lightPosition.x, lightPosition.y, lightPosition.z, 3.0f, near_plane, far_plane);
-	const glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	const glm::mat4 lightView = glm::lookAt(lightPosition / 10.f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	const glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
 	//modelTransform.rotation = glm::rotate(modelTransform.rotation, deltaTime, glm::vec3(0, 1, 0));
@@ -215,7 +215,8 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 		depthShader.use();
 		depthShader.setMat4("projection_matrix", lightSpaceMatrix);
 
-		RenderScene(depthShader);
+		for (const auto model : sceneModels)
+			RenderModel(depthShader, model);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
@@ -259,9 +260,6 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 		glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// Bind textures
-		glBindTextureUnit(0, sceneModels[0]->modelTexture);
-
 		// Set uniforms
 		litShader.use();
 
@@ -270,43 +268,33 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 		litShader.setMat4("view_matrix", camera.viewMatrix());
 
 		// Fragment Shader
-		litShader.setInt("diffuse_texture", 0);
 		litShader.setVec3("light_position", lightPosition);
 		litShader.setVec3("view_position", camera.position);
 
-		RenderScene(litShader);
+		RenderScene(litShader, true);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 }
 
-void Framebuffer::RenderModel(ew::Shader shader, Model* model)
+void Framebuffer::RenderModel(const ew::Shader shader, Model* model)
 {
 	shader.setMat4("model_matrix", model->modelTransform.modelMatrix());
-
-	if (model->model.isValid)
-	{
-		model->model.draw();
-	}
-	else
-	{
-		model->mesh.draw();
-	}
+	model->model.isValid ? model->model.draw() : model->mesh.draw();
 }
 
-void Framebuffer::RenderScene(ew::Shader shader)
+void Framebuffer::RenderScene(const ew::Shader shader, const bool texture)
 {
 	for (const auto model : sceneModels)
 	{
 		shader.setMat4("model_matrix", model->modelTransform.modelMatrix());
 
-		if (model->model.isValid)
+		if(texture)
 		{
-			model->model.draw();
+			glBindTextureUnit(0, model->modelTexture);
+			litShader.setInt("diffuse_texture", 0);
 		}
-		else
-		{
-			model->mesh.draw();
-		}
+
+		model->model.isValid ? model->model.draw() : model->mesh.draw();
 	}
 }
