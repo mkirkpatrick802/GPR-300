@@ -8,7 +8,6 @@
 #include <ew/camera.h>
 #include <ew/transform.h>
 #include <ew/cameraController.h>
-#include <ew/texture.h>
 
 // LIBS
 #include <imgui.h>
@@ -58,6 +57,8 @@ int main()
 
 	camera.farPlane = 30;
 
+	const auto finalShader = ew::Shader("assets/final.vert","assets/final.frag");
+
 	// Game Loop
 	while (!glfwWindowShouldClose(window)) 
 	{
@@ -74,8 +75,25 @@ int main()
 		// Render Scene
 		FrameBufferObject.Render(camera, deltaTime);
 		Crosshatching.Render(FrameBufferObject.FBOPackage, deltaTime);
-		Outline.Render(deltaTime);
-		Noise.Render(deltaTime);
+		Outline.Render(FrameBufferObject.FBOPackage, deltaTime);
+		Noise.Render(FrameBufferObject.FBOPackage, deltaTime);
+
+		// Final Render
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+			glViewport(0, 0, screenWidth, screenHeight);
+			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindTextureUnit(0, FrameBufferObject.FBOPackage.finalBuffer);
+
+			finalShader.use();
+			finalShader.setInt("final_buffer", 0);
+
+			glBindVertexArray(FrameBufferObject.FBOPackage.screenVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
 
 		// Render UI
 		drawUI();

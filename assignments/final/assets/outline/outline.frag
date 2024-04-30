@@ -1,8 +1,8 @@
 #version 450
 
-out vec4 fragment_color;
+layout(location = 4) out vec3 final_buffer;
 
 void main()
 {
-    fragment_color = vec4(1.0, 0.0, 0.0, 1.0);
+
 }

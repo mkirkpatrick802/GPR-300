@@ -1,5 +1,7 @@
 #pragma once
 #include <ew/external/glad.h>
+
+#include "Framebuffer.h"
 #include "ew/shader.h"
 
 class NoiseShader
@@ -7,7 +9,7 @@ class NoiseShader
 public:
 
 	NoiseShader();
-	void Render(float deltaTime);
+	void Render(const FramebufferPackage& package, float deltaTime);
 
 private:
 

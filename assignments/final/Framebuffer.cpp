@@ -82,6 +82,17 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind Lighting Buffer to FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, LightingBuffer, 0);
 
+		// Create Final Buffer
+		glGenTextures(1, &FinalBuffer);
+		glBindTexture(GL_TEXTURE_2D, FinalBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Bind Final to FBO
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, FinalBuffer, 0);
+
 		// Create RBO
 		unsigned int RBO;
 		glGenRenderbuffers(1, &RBO);
@@ -92,8 +103,9 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind RBO to FBO
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-		const unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-		glDrawBuffers(4, attachments);
+		const int num = 5;
+		const unsigned int attachments[num] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+		glDrawBuffers(num, attachments);
 
 		// Check FBO
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -102,9 +114,9 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Unbind FBO
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+		FBOPackage.FBO = FBO;
+		FBOPackage.finalBuffer = FinalBuffer;
 		FBOPackage.colorBuffer = ColorBuffer;
-		FBOPackage.positionBuffer = PositionBuffer;
-		FBOPackage.normalBuffer = NormalBuffer;
 		FBOPackage.lightingBuffer = LightingBuffer;
 	}
 
@@ -269,8 +281,8 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 
 		glCullFace(GL_BACK);
 		glViewport(0, 0, screenWidth, screenHeight);
+
 		glClearColor(0, 0, 0, 1.0f);
-		//glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Set uniforms

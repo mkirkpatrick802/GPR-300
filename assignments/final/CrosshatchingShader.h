@@ -9,7 +9,7 @@ class CrosshatchingShader
 public:
 
 	CrosshatchingShader();
-	void Render(FramebufferPackage package, float deltaTime);
+	void Render(const FramebufferPackage& package, float deltaTime);
 
 private:
 

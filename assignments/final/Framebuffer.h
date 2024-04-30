@@ -8,11 +8,12 @@
 struct FramebufferPackage
 {
 	unsigned int screenVAO;
+	unsigned int FBO;
 	unsigned int colorBuffer;
-	unsigned int shadowBuffer;
-	unsigned int positionBuffer;
-	unsigned int normalBuffer;
 	unsigned int lightingBuffer;
+	unsigned int finalBuffer;
+
+	unsigned int shadowBuffer;
 };
 
 struct Model
@@ -54,6 +55,7 @@ private:
  */
 
 	unsigned int FBO;
+	unsigned int FinalBuffer;
 	unsigned int PositionBuffer;
 	unsigned int NormalBuffer;
 	unsigned int ColorBuffer;
