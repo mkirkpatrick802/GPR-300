@@ -12,6 +12,7 @@ struct FramebufferPackage
 	unsigned int shadowBuffer;
 	unsigned int positionBuffer;
 	unsigned int normalBuffer;
+	unsigned int lightingBuffer;
 };
 
 struct Model
@@ -56,6 +57,7 @@ private:
 	unsigned int PositionBuffer;
 	unsigned int NormalBuffer;
 	unsigned int ColorBuffer;
+	unsigned int LightingBuffer;
 
 	ew::Shader litShader;
 
@@ -85,8 +87,8 @@ private:
 	ew::Shader depthShader;
 	ew::Shader shadowShader;
 
-	const unsigned int SHADOW_WIDTH = 2048;
-	const unsigned int SHADOW_HEIGHT = 2048;
+	const unsigned int SHADOW_WIDTH = 4048;
+	const unsigned int SHADOW_HEIGHT = 4048;
 
 	unsigned int depthMapFBO;
 	unsigned int depthMap;

@@ -56,6 +56,8 @@ int main()
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
 
+	camera.farPlane = 30;
+
 	// Game Loop
 	while (!glfwWindowShouldClose(window)) 
 	{

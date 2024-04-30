@@ -3,6 +3,7 @@
 layout(location = 0) out vec3 position_buffer;
 layout(location = 1) out vec3 normal_buffer;
 layout(location = 2) out vec3 color_buffer;
+layout(location = 3) out vec3 lighting_buffer;
 
 in Surface
 {
@@ -38,7 +39,8 @@ void main()
 	vec3 specular = spec * light_color;
 	
 	// render to textures
-	color_buffer = (ambient * 1 + (diffuse + specular)) * color;
+	lighting_buffer = vec3(1 - (ambient * 1 + (diffuse + specular)).r);
+	color_buffer = color;
 	position_buffer = fs_in.world_position;
 	normal_buffer = fs_in.world_normal;
 }

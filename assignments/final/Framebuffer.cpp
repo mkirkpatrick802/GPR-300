@@ -12,7 +12,7 @@ Framebuffer::Framebuffer(): FBOPackage(), FBO(0), ColorBuffer(0),
                             depthShader(ew::Shader("assets/depth.vert", "assets/depth.frag")),
 							shadowShader(ew::Shader("assets/shadow.vert", "assets/shadow.frag"))
 {
-	auto suzanne = new Model(ew::Model("assets/suzanne.obj"), ew::Transform(), ew::loadTexture("assets/brick.jpg"));
+	auto suzanne = new Model(ew::Model("assets/suzanne.obj"), ew::Transform(), ew::loadTexture("assets/paper.jpg"));
 
 	ew::Transform sphereTransform;
 	sphereTransform.position = glm::vec3(-3, 0, 0);
@@ -20,7 +20,7 @@ Framebuffer::Framebuffer(): FBOPackage(), FBO(0), ColorBuffer(0),
 
 	ew::Transform planeT;
 	planeT.position = glm::vec3(0, -2, 0);
-	auto plane = new Model(ew::createPlane(305, 305, 128), planeT, ew::loadTexture("assets/brick.jpg"));
+	auto plane = new Model(ew::createPlane(305, 305, 128), planeT, ew::loadTexture("assets/paper.jpg"));
 
 	sceneModels.push_back(suzanne);
 	sceneModels.push_back(sphere);
@@ -71,6 +71,17 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind Color Buffer to FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, ColorBuffer, 0);
 
+		// Create Lighting Buffer
+		glGenTextures(1, &LightingBuffer);
+		glBindTexture(GL_TEXTURE_2D, LightingBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Bind Lighting Buffer to FBO
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, LightingBuffer, 0);
+
 		// Create RBO
 		unsigned int RBO;
 		glGenRenderbuffers(1, &RBO);
@@ -81,8 +92,8 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind RBO to FBO
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-		const unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-		glDrawBuffers(3, attachments);
+		const unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+		glDrawBuffers(4, attachments);
 
 		// Check FBO
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -94,6 +105,7 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		FBOPackage.colorBuffer = ColorBuffer;
 		FBOPackage.positionBuffer = PositionBuffer;
 		FBOPackage.normalBuffer = NormalBuffer;
+		FBOPackage.lightingBuffer = LightingBuffer;
 	}
 
 /*
@@ -197,9 +209,9 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 {
 	const float near_plane = 1.0f;
 	const float far_plane = 7.5f;
-	const glm::vec3 lightPosition = glm::vec3(-20, 20, -20);
-	const glm::mat4 lightProjection = glm::ortho(lightPosition.x, lightPosition.y, lightPosition.z, 3.0f, near_plane, far_plane);
-	const glm::mat4 lightView = glm::lookAt(lightPosition / 10.f, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	const glm::vec3 lightPosition = glm::vec3(-20, 50, -20);
+	const glm::mat4 lightProjection = glm::ortho(lightPosition.x, lightPosition.y, lightPosition.z, lightPosition.y, near_plane, far_plane);
+	const glm::mat4 lightView = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	const glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
 	//modelTransform.rotation = glm::rotate(modelTransform.rotation, deltaTime, glm::vec3(0, 1, 0));
@@ -257,7 +269,8 @@ void Framebuffer::Render(const ew::Camera& camera, const float deltaTime)
 
 		glCullFace(GL_BACK);
 		glViewport(0, 0, screenWidth, screenHeight);
-		glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
+		glClearColor(0, 0, 0, 1.0f);
+		//glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Set uniforms
