@@ -82,6 +82,20 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind Lighting Buffer to FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, LightingBuffer, 0);
 
+		// Create Depth Map
+		glGenTextures(1, &depthMap);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, screenWidth, screenHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+
+
 		// Create Final Buffer
 		glGenTextures(1, &FinalBuffer);
 		glBindTexture(GL_TEXTURE_2D, FinalBuffer);
@@ -118,6 +132,7 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		FBOPackage.finalBuffer = FinalBuffer;
 		FBOPackage.colorBuffer = ColorBuffer;
 		FBOPackage.lightingBuffer = LightingBuffer;
+		FBOPackage.depthMap = depthMap;
 	}
 
 /*
