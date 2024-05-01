@@ -27,9 +27,9 @@ void main()
 	);
 
 	float kernel[9] = float[](
-		1,  1, 1,
-		1,  -9, 1,
-		1,  1, 1
+		 1,   2,  1,
+		 0,   0,  0,
+		-1,  -2, -1
 	);
 
 	vec3 sampleTex[9];
@@ -41,12 +41,12 @@ void main()
 	vec3 col = vec3(0);
 	for(int i = 0; i < 9; i++)
 	{
-		col += sampleTex[i] * kernel[i];
+		col += sampleTex[i] * (kernel[i] * 2);
 	}
 
 	vec3 finalColor = col;
 	vec3 rgb = texture(_ColorBuffer, uv).rgb;
-	if(col.r >= -1.3 && col.r <1)
+	if(col.r >= -1.5 && col.r <1)
 	{
 		finalColor = rgb;
 	}
