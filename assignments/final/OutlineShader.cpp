@@ -11,6 +11,7 @@ void OutlineShader::Render(const FramebufferPackage& package, float deltaTime)
 	glBindFramebuffer(GL_FRAMEBUFFER, package.FBO);
 	glClearColor(1, 1, 1, 1);
 	glClear( GL_DEPTH_BUFFER_BIT);
+
 	//Bind Textures
 	glBindTextureUnit(0, package.colorBuffer);
 	glBindTextureUnit(1, package.normalBuffer);
