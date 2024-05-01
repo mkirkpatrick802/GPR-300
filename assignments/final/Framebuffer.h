@@ -16,6 +16,9 @@ struct FramebufferPackage
 	unsigned int finalBuffer;
 
 	unsigned int shadowBuffer;
+
+	unsigned int crosshatchingBuffer;
+	unsigned int outlineBuffer;
 };
 
 struct Model
@@ -62,6 +65,9 @@ private:
 	unsigned int NormalBuffer;
 	unsigned int ColorBuffer;
 	unsigned int LightingBuffer;
+
+	unsigned int CrosshatchingBuffer;
+	unsigned int OutlineBuffer;
 
 	ew::Shader litShader;
 

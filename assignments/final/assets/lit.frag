@@ -5,6 +5,8 @@ layout(location = 1) out vec3 normal_buffer;
 layout(location = 2) out vec3 color_buffer;
 layout(location = 3) out vec3 lighting_buffer;
 layout(location = 4) out vec3 final_buffer;
+layout(location = 5) out vec3 crosshatching_buffer;
+layout(location = 6) out vec3 outline_buffer;
 
 in Surface
 {
@@ -45,4 +47,6 @@ void main()
 	position_buffer = fs_in.world_position;
 	normal_buffer = fs_in.world_normal;
 	final_buffer = vec3(1,0,1);
+	crosshatching_buffer = vec3(1,0,1);
+	outline_buffer = vec3(1,0,1);
 }

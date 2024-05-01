@@ -86,7 +86,7 @@ int main()
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glBindTextureUnit(0, FrameBufferObject.FBOPackage.finalBuffer);
+			glBindTextureUnit(0, FrameBufferObject.FBOPackage.crosshatchingBuffer);
 
 			finalShader.use();
 			finalShader.setInt("final_buffer", 0);
