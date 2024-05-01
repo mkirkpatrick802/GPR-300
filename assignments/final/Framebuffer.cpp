@@ -15,14 +15,19 @@ Framebuffer::Framebuffer(): FBOPackage(), FBO(0), ColorBuffer(0),
 	auto suzanne = new Model(ew::Model("assets/suzanne.obj"), ew::Transform(), ew::loadTexture("assets/paper.jpg"));
 
 	ew::Transform sphereTransform;
-	sphereTransform.position = glm::vec3(-3, 0, 0);
+	sphereTransform.position = glm::vec3(-4, 0, 0);
 	auto sphere = new Model(ew::Model("assets/sphere.obj"), sphereTransform, ew::loadTexture("assets/paper.jpg"));
+
+	ew::Transform cubeStackTransform;
+	cubeStackTransform.position = glm::vec3(-3, -2, -6);
+	auto cube = new Model(ew::Model("assets/quick.obj"), cubeStackTransform, ew::loadTexture("assets/paper.jpg"));
 
 	ew::Transform planeT;
 	planeT.position = glm::vec3(0, -2, 0);
 	auto plane = new Model(ew::createPlane(305, 305, 128), planeT, ew::loadTexture("assets/paper.jpg"));
 
 	sceneModels.push_back(suzanne);
+	sceneModels.push_back(cube);
 	sceneModels.push_back(sphere);
 	sceneModels.push_back(plane);
 }
