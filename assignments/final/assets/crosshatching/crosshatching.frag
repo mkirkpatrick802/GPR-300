@@ -2,6 +2,7 @@
 
 layout(location = 2) out vec3 color_buffer;
 layout(location = 4) out vec3 final_buffer;
+layout(location = 5) out vec3 crosshatching_buffer;
 
 uniform sampler2D shadow_buffer;
 uniform sampler2D crosshatching_texture;
@@ -44,6 +45,6 @@ void main()
     }
 
 	// render to textures
-	final_buffer = final.rgb;
+	crosshatching_buffer = final.rgb;
     color_buffer = color;
 }

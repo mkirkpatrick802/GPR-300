@@ -1,6 +1,6 @@
 #version 450
 
-layout(location = 4) out vec3 final_buffer;
+layout(location = 6) out vec3 outline_buffer;
 in vec2 uv;
 
 uniform sampler2D _ColorBuffer;
@@ -56,5 +56,5 @@ void main()
 	}
 	
 
-	final_buffer = finalColor;
+	outline_buffer = finalColor;
 }

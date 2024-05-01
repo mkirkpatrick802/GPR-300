@@ -95,7 +95,6 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 
-
 		// Create Final Buffer
 		glGenTextures(1, &FinalBuffer);
 		glBindTexture(GL_TEXTURE_2D, FinalBuffer);
@@ -107,6 +106,28 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind Final to FBO
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, FinalBuffer, 0);
 
+		// Create Crosshatching Buffer
+		glGenTextures(1, &CrosshatchingBuffer);
+		glBindTexture(GL_TEXTURE_2D, CrosshatchingBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Bind Crosshatching to FBO
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT5, GL_TEXTURE_2D, CrosshatchingBuffer, 0);
+
+		// Create Outline Buffer
+		glGenTextures(1, &OutlineBuffer);
+		glBindTexture(GL_TEXTURE_2D, OutlineBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		// Bind Outline to FBO
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT6, GL_TEXTURE_2D, OutlineBuffer, 0);
+
 		// Create RBO
 		unsigned int RBO;
 		glGenRenderbuffers(1, &RBO);
@@ -117,8 +138,8 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		// Bind RBO to FBO
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-		const int num = 5;
-		const unsigned int attachments[num] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+		const int num = 7;
+		const unsigned int attachments[num] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 };
 		glDrawBuffers(num, attachments);
 
 		// Check FBO
@@ -134,6 +155,8 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		FBOPackage.lightingBuffer = LightingBuffer;
 		FBOPackage.depthMap = depthMap;
 		FBOPackage.normalBuffer = NormalBuffer;
+		FBOPackage.crosshatchingBuffer = CrosshatchingBuffer;
+		FBOPackage.outlineBuffer = OutlineBuffer;
 	}
 
 /*

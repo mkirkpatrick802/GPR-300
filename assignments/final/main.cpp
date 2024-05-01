@@ -86,10 +86,12 @@ int main()
 			glClearColor(0.6f, 0.8f, 0.92f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glBindTextureUnit(0, FrameBufferObject.FBOPackage.finalBuffer);
+			glBindTextureUnit(0, FrameBufferObject.FBOPackage.crosshatchingBuffer);
+			glBindTextureUnit(1, FrameBufferObject.FBOPackage.outlineBuffer);
 
 			finalShader.use();
-			finalShader.setInt("final_buffer", 0);
+			finalShader.setInt("crosshatching_texture", 0);
+			finalShader.setInt("outline_texture", 1);
 
 			glBindVertexArray(FrameBufferObject.FBOPackage.screenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
