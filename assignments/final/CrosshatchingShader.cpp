@@ -14,14 +14,17 @@ void CrosshatchingShader::Render(const FramebufferPackage& package, float deltaT
 	glBindTextureUnit(0, package.shadowBuffer);
 	glBindTextureUnit(1, crosshatchingTexture);
 
-	glBindTextureUnit(2, package.colorBuffer);
-	glBindTextureUnit(3, package.lightingBuffer);
+	glBindTextureUnit(2, package.normalBuffer);
+	glBindTextureUnit(3, package.colorBuffer);
+	glBindTextureUnit(4, package.lightingBuffer);
 
 	shader.use();
 	shader.setInt("shadow_buffer", 0);
 	shader.setInt("crosshatching_texture", 1);
-	shader.setInt("color_texture", 2);
-	shader.setInt("lighting_texture", 3);
+
+	shader.setInt("normal_texture", 2);
+	shader.setInt("color_texture", 3);
+	shader.setInt("lighting_texture", 4);
 
 	glBindVertexArray(package.screenVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);

@@ -25,6 +25,9 @@ Framebuffer::Framebuffer(): FBOPackage(), FBO(0), ColorBuffer(0),
 	sceneModels.push_back(suzanne);
 	sceneModels.push_back(sphere);
 	sceneModels.push_back(plane);
+
+	FBOPackage.width = screenWidth;
+	FBOPackage.height = screenHeight;
 }
 
 void Framebuffer::InitFBO(int screenWidth, int screenHeight)
@@ -118,6 +121,7 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		FBOPackage.finalBuffer = FinalBuffer;
 		FBOPackage.colorBuffer = ColorBuffer;
 		FBOPackage.lightingBuffer = LightingBuffer;
+		FBOPackage.normalBuffer = NormalBuffer;
 	}
 
 /*

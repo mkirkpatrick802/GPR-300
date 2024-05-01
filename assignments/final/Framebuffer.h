@@ -12,8 +12,12 @@ struct FramebufferPackage
 	unsigned int colorBuffer;
 	unsigned int lightingBuffer;
 	unsigned int finalBuffer;
+	unsigned int normalBuffer;
 
 	unsigned int shadowBuffer;
+
+	int width;
+	int height;
 };
 
 struct Model

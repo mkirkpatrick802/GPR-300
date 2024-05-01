@@ -1,10 +1,13 @@
 #version 450
 
+layout(location = 1) out vec3 normal_buffer;
+layout(location = 2) out vec3 color_buffer;
 layout(location = 4) out vec3 final_buffer;
 
 uniform sampler2D shadow_buffer;
 uniform sampler2D crosshatching_texture;
 
+uniform sampler2D normal_texture;
 uniform sampler2D color_texture;
 uniform sampler2D lighting_texture;
 
@@ -43,5 +46,7 @@ void main()
     }
 
 	// render to textures
+    normal_buffer = texture(normal_texture, uv).rgb;
+    color_buffer = color;
 	final_buffer = final.rgb;
 }
