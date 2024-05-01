@@ -42,6 +42,8 @@ void resetCamera();
 CrosshatchingShader Crosshatching;
 OutlineShader Outline;
 
+float noiseFactor = .1;
+
 int main() 
 {
 	GLFWwindow* window = initWindow("Moebius Shader", screenWidth, screenHeight);
@@ -100,6 +102,7 @@ int main()
 			finalShader.setInt("crosshatching_texture", 0);
 			finalShader.setInt("outline_texture", 1);
 			finalShader.setInt("noise_texture", 2);
+			finalShader.setFloat("noise_factor", noiseFactor);
 
 			glBindVertexArray(FrameBufferObject.FBOPackage.screenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -153,10 +156,19 @@ void drawUI()
 		ImGui::SliderFloat("First Hatching Threshold", &Crosshatching.settings.crosshatching_first_threshold, 0, 1);
 	}
 
+	ImGui::Spacing();
+
 	if (ImGui::CollapsingHeader("Outlines"))
 	{
-		ImGui::SliderFloat("Outline Amount", &Outline.outlineAmount, 0, 10);
-		ImGui::SliderFloat3("Outline Color", &Outline.color.x, 0, 1);
+		ImGui::SliderFloat("Amount", &Outline.outlineAmount, 0, 10);
+		ImGui::SliderFloat3("Color", &Outline.color.x, 0, 1);
+	}
+
+	ImGui::Spacing();
+
+	if (ImGui::CollapsingHeader("Noise"))
+	{
+		ImGui::SliderFloat("Amount", &noiseFactor, 0, .5);
 	}
 
 	ImGui::End();
