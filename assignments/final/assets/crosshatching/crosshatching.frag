@@ -1,6 +1,5 @@
 #version 450
 
-layout(location = 2) out vec3 color_buffer;
 layout(location = 4) out vec3 final_buffer;
 layout(location = 5) out vec3 crosshatching_buffer;
 
@@ -70,5 +69,4 @@ void main()
 
     // Output to buffers
     crosshatching_buffer = final.rgb;
-    color_buffer = color;
 }

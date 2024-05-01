@@ -49,6 +49,7 @@ struct PostProcessEffect
 int main() 
 {
 	GLFWwindow* window = initWindow("Assignment 1", screenWidth, screenHeight);
+	glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_FALSE);
 
 	ew::Shader litShader = ew::Shader("assets/lit.vert", "assets/lit.frag");
 	ew::Shader postShader = ew::Shader("assets/post.vert", "assets/post.frag");
