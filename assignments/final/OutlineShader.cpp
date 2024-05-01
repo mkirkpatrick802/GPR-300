@@ -1,7 +1,7 @@
 #pragma once
 #include "OutlineShader.h"
 
-OutlineShader::OutlineShader(): shader(ew::Shader("assets/outline/outline.vert", "assets/outline/outline.frag"))
+OutlineShader::OutlineShader()
 {
 
 }
@@ -18,11 +18,17 @@ void OutlineShader::Render(const FramebufferPackage& package, float deltaTime)
 
 	shader.use();
 	shader.setInt("_ColorBuffer", 0);
-	shader.setVec3("_OutlineColor", glm::vec3(0));
+	shader.setVec3("_OutlineColor", color);
 	shader.setInt("_NormalBuffer", 1);
+	shader.setFloat("_OutlineAmount", outlineAmount);
 
 	glBindVertexArray(package.screenVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void OutlineShader::Create()
+{
+	shader = ew::Shader("assets/outline/outline.vert", "assets/outline/outline.frag");
 }

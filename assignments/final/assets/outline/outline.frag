@@ -6,6 +6,7 @@ in vec2 uv;
 uniform sampler2D _ColorBuffer;
 uniform sampler2D _NormalBuffer;
 uniform vec3 _OutlineColor;
+uniform float _OutlineAmount;
 
 const float offset = 1.0 / 600.0;
 
@@ -41,7 +42,7 @@ void main()
 	vec3 col = vec3(0);
 	for(int i = 0; i < 9; i++)
 	{
-		col += sampleTex[i] * (kernel[i] * 2);
+		col += sampleTex[i] * (kernel[i] * _OutlineAmount);
 	}
 
 	vec3 finalColor = col;

@@ -39,6 +39,7 @@ void resetCamera();
 
 // Shaders
 CrosshatchingShader Crosshatching;
+OutlineShader Outline;
 
 int main() 
 {
@@ -58,7 +59,7 @@ int main()
 	const auto finalShader = ew::Shader("assets/final.vert","assets/final.frag");
 
 	Crosshatching.Create();
-	OutlineShader Outline;
+	Outline.Create();
 	NoiseShader Noise;
 
 	// Game Loop
@@ -145,6 +146,12 @@ void drawUI()
 		ImGui::SliderFloat("Full Hatching Threshold", &Crosshatching.settings.crosshatching_full_threshold, 0, 1);
 		ImGui::SliderFloat("Half Hatching Threshold", &Crosshatching.settings.crosshatching_half_threshold, 0, 1);
 		ImGui::SliderFloat("First Hatching Threshold", &Crosshatching.settings.crosshatching_first_threshold, 0, 1);
+	}
+
+	if (ImGui::CollapsingHeader("Outlines"))
+	{
+		ImGui::SliderFloat("Outline Amount", &Outline.outlineAmount, 0, 10);
+		ImGui::SliderFloat3("Outline Color", &Outline.color.x, 0, 1);
 	}
 
 	ImGui::End();
