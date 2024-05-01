@@ -157,6 +157,7 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		FBOPackage.normalBuffer = NormalBuffer;
 		FBOPackage.crosshatchingBuffer = CrosshatchingBuffer;
 		FBOPackage.outlineBuffer = OutlineBuffer;
+		FBOPackage.positionBuffer = PositionBuffer;
 	}
 
 /*

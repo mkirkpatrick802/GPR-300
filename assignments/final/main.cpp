@@ -37,6 +37,9 @@ ew::Camera camera;
 void setupCamera();
 void resetCamera();
 
+// Shaders
+CrosshatchingShader Crosshatching;
+
 int main() 
 {
 	GLFWwindow* window = initWindow("Moebius Shader", screenWidth, screenHeight);
@@ -46,11 +49,6 @@ int main()
 	Framebuffer FrameBufferObject;
 	FrameBufferObject.InitFBO(screenWidth, screenHeight);
 
-	// Shaders
-	CrosshatchingShader Crosshatching;
-	OutlineShader Outline;
-	NoiseShader Noise;
-
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glEnable(GL_DEPTH_TEST);
@@ -58,6 +56,10 @@ int main()
 	camera.farPlane = 30;
 
 	const auto finalShader = ew::Shader("assets/final.vert","assets/final.frag");
+
+	Crosshatching.Create();
+	OutlineShader Outline;
+	NoiseShader Noise;
 
 	// Game Loop
 	while (!glfwWindowShouldClose(window)) 
@@ -74,7 +76,7 @@ int main()
 
 		// Render Scene
 		FrameBufferObject.Render(camera, deltaTime);
-		Crosshatching.Render(FrameBufferObject.FBOPackage, deltaTime);
+		Crosshatching.Render(camera , FrameBufferObject.FBOPackage, deltaTime);
 		Outline.Render(FrameBufferObject.FBOPackage, deltaTime);
 		Noise.Render(FrameBufferObject.FBOPackage, deltaTime);
 
@@ -130,9 +132,19 @@ void drawUI()
 
 	ImGui::Begin("Settings");
 
-	if (ImGui::Button("Reset Camera")) 
+	ImGui::Spacing();
+	if (ImGui::Button("Reset Camera")) { resetCamera(); }
+	ImGui::Spacing();
+
+	if (ImGui::CollapsingHeader("Crosshatching"))
 	{
-		resetCamera();
+		ImGui::Checkbox("Screen Space", &Crosshatching.settings.screen_space_hatching);
+		if(Crosshatching.settings.screen_space_hatching)
+			ImGui::InputInt("UV Tiling", &Crosshatching.settings.crosshatching_tiling);
+
+		ImGui::SliderFloat("Full Hatching Threshold", &Crosshatching.settings.crosshatching_full_threshold, 0, 1);
+		ImGui::SliderFloat("Half Hatching Threshold", &Crosshatching.settings.crosshatching_half_threshold, 0, 1);
+		ImGui::SliderFloat("First Hatching Threshold", &Crosshatching.settings.crosshatching_first_threshold, 0, 1);
 	}
 
 	ImGui::End();

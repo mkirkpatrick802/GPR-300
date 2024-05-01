@@ -27,7 +27,7 @@ void main()
 	vec3 light_color = vec3(1);
 
 	// ambient
-	vec3 ambient = vec3(0.3, 0.4, 0.46) * light_color;
+	vec3 ambient = vec3(0.4) * light_color;
 
 	// diffuse
 	vec3 light_direction = normalize(light_position - fs_in.world_position);

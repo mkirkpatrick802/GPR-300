@@ -83,6 +83,11 @@ namespace ew {
 	/// </summary>
 	/// <param name="vertexShader">File path to vertex shader</param>
 	/// <param name="fragmentShader">File path to fragment shader</param>
+
+	Shader::Shader(): m_id(2555)
+	{
+	}
+
 	Shader::Shader(const std::string& vertexShader, const std::string& fragmentShader)
 	{
 		std::string vertexShaderSource = ew::loadShaderSourceFromFile(vertexShader.c_str());
