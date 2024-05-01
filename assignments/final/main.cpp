@@ -19,6 +19,7 @@
 #include "CrosshatchingShader.h"
 #include "OutlineShader.h"
 #include "NoiseShader.h"
+#include "ew/texture.h"
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 GLFWwindow* initWindow(const char* title, int width, int height);
@@ -44,6 +45,7 @@ OutlineShader Outline;
 int main() 
 {
 	GLFWwindow* window = initWindow("Moebius Shader", screenWidth, screenHeight);
+	glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_FALSE);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 	setupCamera();
 
@@ -57,6 +59,7 @@ int main()
 	camera.farPlane = 30;
 
 	const auto finalShader = ew::Shader("assets/final.vert","assets/final.frag");
+	auto noise = ew::loadTexture("assets/noise/noise.jpg");
 
 	Crosshatching.Create();
 	Outline.Create();
@@ -91,10 +94,12 @@ int main()
 
 			glBindTextureUnit(0, FrameBufferObject.FBOPackage.crosshatchingBuffer);
 			glBindTextureUnit(1, FrameBufferObject.FBOPackage.outlineBuffer);
+			glBindTextureUnit(2, noise);
 
 			finalShader.use();
 			finalShader.setInt("crosshatching_texture", 0);
 			finalShader.setInt("outline_texture", 1);
+			finalShader.setInt("noise_texture", 2);
 
 			glBindVertexArray(FrameBufferObject.FBOPackage.screenVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
