@@ -4,7 +4,7 @@ layout(location = 4) out vec3 final_buffer;
 in vec2 uv;
 
 uniform sampler2D _ColorBuffer;
-uniform sampler2D _DepthBuffer;
+uniform sampler2D _NormalBuffer;
 uniform vec3 _OutlineColor;
 
 const float offset = 1.0 / 600.0;
@@ -36,7 +36,7 @@ void main()
 	vec2 copy_uv = uv;
 	for(int i = 0; i < 9; i++)
 	{
-		sampleTex[i] = vec3(texture(_ColorBuffer, copy_uv.st + offsets[i]));
+		sampleTex[i] = vec3(texture(_NormalBuffer, copy_uv.st + offsets[i]));
 	}
 	vec3 col = vec3(0);
 	for(int i = 0; i < 9; i++)

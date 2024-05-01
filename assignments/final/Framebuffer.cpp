@@ -133,6 +133,7 @@ void Framebuffer::InitFBO(int screenWidth, int screenHeight)
 		FBOPackage.colorBuffer = ColorBuffer;
 		FBOPackage.lightingBuffer = LightingBuffer;
 		FBOPackage.depthMap = depthMap;
+		FBOPackage.normalBuffer = NormalBuffer;
 	}
 
 /*

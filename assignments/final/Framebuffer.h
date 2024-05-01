@@ -12,6 +12,7 @@ struct FramebufferPackage
 	unsigned int colorBuffer;
 	unsigned int lightingBuffer;
 	unsigned int depthMap;
+	unsigned int normalBuffer;
 	unsigned int finalBuffer;
 
 	unsigned int shadowBuffer;
